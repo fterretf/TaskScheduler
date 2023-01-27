@@ -10,6 +10,7 @@
 #endif
 
 #include "TaskScheduler.h"
+#define MCU_PIN_NB15 15 // A0 disconnected! Use by ANA (and Audio IN) 
 
 TaskScheduler::TaskScheduler(Task **_tasks, uint8_t _numTasks) :
   tasks(_tasks),
@@ -23,7 +24,14 @@ void TaskScheduler::runTasks() {
         for (int t = 0; t < numTasks; t++) {
             Task *tp = *tpp;
             if (tp->canRun(now)) {
+                #ifdef ARI_MEASURE_LOAD_A0234     
+                pinMode(MCU_PIN_NB15, OUTPUT);             
+                digitalWrite(MCU_PIN_NB15, 1);         
+                #endif
                 tp->run(now);
+                #ifdef ARI_MEASURE_LOAD_A0234                
+                digitalWrite(MCU_PIN_NB15, 0);         
+                #endif
                 break;
             }
             tpp++;
