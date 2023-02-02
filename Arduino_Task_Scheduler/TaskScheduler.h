@@ -13,7 +13,7 @@
 #include "Task.h"
 
 // Calculate the number of tasks in the array, given the size.
-#define NUM_TASKS(T) (sizeof(T) / sizeof(Task))
+#define NUM_TASKS(T) (sizeof(T) / sizeof(Task*)) // Bug corrected! Task* instead of Task!
 
 class TaskScheduler {
 

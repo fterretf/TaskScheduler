@@ -12,5 +12,13 @@ bool TriggeredTask::canRun(uint32_t now) {
 
 // Virtual.
 bool TimedTask::canRun(uint32_t now) {
-    return now >= runTime;
+    bool run = (now >= runTime);
+    #ifdef ARI_MEASURE_LOAD  
+    if (run){
+        uint32_t diff;
+        diff = now - runTime;
+        _queue->push(&diff);
+    }
+    #endif
+    return run;
 }
