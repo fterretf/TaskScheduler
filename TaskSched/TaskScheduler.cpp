@@ -23,7 +23,14 @@ void TaskScheduler::runTasks() {
         for (int t = 0; t < numTasks; t++) {
             Task *tp = *tpp;
             if (tp->canRun(now)) {
+                #ifdef ARI_MEASURE_LOAD  
+                tp->taskId2Dso();      
+                #endif
+                //check how late is the task
                 tp->run(now);
+                #ifdef ARI_MEASURE_LOAD             
+                tp->task0Dso();      
+                #endif
                 break;
             }
             tpp++;

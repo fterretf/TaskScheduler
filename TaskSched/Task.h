@@ -11,6 +11,9 @@
 #define Task_h
 
 #include <stdint.h>
+#include <Arduino.h>
+#include "pin.h"
+#include "cppQueue.h"
 
 // Maximum time into the future - approximately 50 days.
 #define MAX_TIME UINT32_MAX
@@ -27,6 +30,10 @@ class Task {
 */
 
 public:
+
+    Task(uint8_t taskId ):_id(taskId)
+    {};
+
     /*
      * Can the task currently run?
      * now - current time, in milliseconds.
@@ -38,6 +45,12 @@ public:
      * now - current time, in milliseconds.
      */
     virtual void run(uint32_t now) = 0;			//<--ABSTRACT
+
+    virtual void taskId2Dso(){};
+    virtual void task0Dso(){};    
+
+protected:
+    uint8_t _id;
 };
 
 /*
@@ -76,7 +89,15 @@ public:
      * Create a periodically executed task.
      * when - the system clock tick when the task should run, in milliseconds.
      */
-    inline TimedTask(uint32_t when) { runTime = when; }
+    inline TimedTask(uint8_t id, uint32_t when): Task(id) {
+        runTime = when; 
+
+        #ifdef ARI_MEASURE_LOAD  
+        //                     size_rec          nb_recs                       cppQueueType overwrite pQDat     sizeof pQDat 
+        _queue = new cppQueue(sizeof(uint32_t), sizeof(_queueItems)/sizeof(uint32_t), FIFO,true, _queueItems, sizeof(_queueItems));
+        memset(_queueItems,0xFF,sizeof(_queueItems));
+        #endif        
+    }
 
     /*
      * Can the task currently run?
@@ -102,9 +123,29 @@ public:
      */
     inline uint32_t getRunTime() { return runTime; }
 
+    void taskId2Dso(){
+        #ifdef ARI_MEASURE_LOAD  
+        //set A0 to 1 and A4,5,6,7 to task _id
+        uint32_t volatile r =     (0x01 << 2) | // shift is pin nb on the PORT! see variants\mkrwifi1010\variant.cpp g_APinDescription
+                              (_id&0x0F)<< 4;
+		PORT->Group[0].OUTSET.reg = r; 
+        #endif        
+    }
+    void task0Dso(){
+        #ifdef ARI_MEASURE_LOAD  
+        //set A0, A4,5,6,7 to 0
+        uint32_t volatile r = (0x01 << 2) | 
+                             (0x0F << 4) ;
+		PORT->Group[0].OUTCLR.reg = r;
+        #endif        
+    }
+
 protected:
-    
     uint32_t runTime;   // The  system clock tick when the task can next run.
+    #ifdef ARI_MEASURE_LOAD  
+    cppQueue * _queue; //(new cppQueue(sizeof(MsgCan::msgCan), 64)  
+    uint32_t _queueItems[64];  
+    #endif
 };
 
 #endif
